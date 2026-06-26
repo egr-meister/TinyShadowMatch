@@ -12,3 +12,8 @@ yarn-error.*
 *.orig.*
 .env
 .env.local
+
+# Never commit signing keys
+*.jks
+*.keystore
+*.b64
