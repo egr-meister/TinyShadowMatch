@@ -363,7 +363,7 @@ function ShadowHomeScreen({ nav }) {
             style={styles.homeHalf}
           />
           <BigButton
-            label="Adults"
+            label="Settings"
             emoji="⚙️"
             color={C.grape}
             onPress={() => nav.go('parentSettings')}
@@ -861,7 +861,7 @@ function ParentSettingsScreen({ nav, settings, setSettings, stats, onReset }) {
     <ScreenFrame>
       <TopBar onHome={() => nav.reset('home')} onBack={() => nav.back()} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.settingsContent}>
-        <Text style={styles.screenTitle}>For Adults</Text>
+        <Text style={styles.screenTitle}>Settings</Text>
 
         <View style={styles.settingsCard}>
           <Text style={styles.settingsLabel}>Default difficulty</Text>
