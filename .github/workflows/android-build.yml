@@ -82,7 +82,7 @@ jobs:
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease bundleRelease --no-daemon
         env:
           MYAPP_UPLOAD_STORE_FILE: release.keystore
           MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -92,6 +92,6 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tiny-shadow-match-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          name: tiny-shadow-match-release
+          path: android/app/build/outputs/**/release/*
           if-no-files-found: error
