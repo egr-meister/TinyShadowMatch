@@ -80,7 +80,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build release APK
+      - name: Build release APK and AAB
         working-directory: android
         run: ./gradlew assembleRelease bundleRelease --no-daemon
         env:
@@ -94,4 +94,11 @@ jobs:
         with:
           name: tiny-shadow-match-release
           path: android/app/build/outputs/**/release/*
+          if-no-files-found: error
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiny-shadow-match-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
