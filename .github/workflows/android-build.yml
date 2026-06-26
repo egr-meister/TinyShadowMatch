@@ -1,0 +1,87 @@
+name: Android Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Expo prebuild (Android)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Configure release signing
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const p = 'android/app/build.gradle';
+          let s = fs.readFileSync(p, 'utf8');
+
+          // 1) Add a "release" signing config right after the existing "debug" one.
+          if (!/signingConfigs\s*\{\s*debug\s*\{/.test(s)) {
+            throw new Error('Could not find debug signingConfig in build.gradle');
+          }
+          s = s.replace(
+            /(signingConfigs\s*\{\s*debug\s*\{[\s\S]*?\})/,
+            "$1\n        release {\n            storeFile file(System.getenv('MYAPP_UPLOAD_STORE_FILE') ?: 'release.keystore')\n            storePassword System.getenv('MYAPP_UPLOAD_STORE_PASSWORD')\n            keyAlias System.getenv('MYAPP_UPLOAD_KEY_ALIAS')\n            keyPassword System.getenv('MYAPP_UPLOAD_KEY_PASSWORD')\n        }"
+          );
+
+          // 2) Point the release build type at the new release signing config.
+          const before = s;
+          s = s.replace(
+            /(buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig\s+signingConfigs\.)debug/,
+            '$1release'
+          );
+          if (s === before) {
+            throw new Error('Could not repoint release buildType to release signingConfig');
+          }
+
+          fs.writeFileSync(p, s);
+          console.log('Release signing config patched into build.gradle');
+          EOF
+
+      - name: Decode keystore
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+        env:
+          MYAPP_UPLOAD_STORE_FILE: release.keystore
+          MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          MYAPP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiny-shadow-match-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
