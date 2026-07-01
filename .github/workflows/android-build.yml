@@ -28,8 +28,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install
-          npx expo install expo-asset expo-font expo-constants
+          npm install --legacy-peer-deps
+          npx expo install --fix
+          npx expo install expo-asset expo-font expo-constants expo-build-properties
 
       - name: Expo prebuild (Android)
         run: npx expo prebuild --platform android --no-install
